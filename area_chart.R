@@ -1,0 +1,76 @@
+pacman::p_load(showtext, scales, ggplot2, tidyr, dplyr, ggpattern)
+
+font_add_google("Source Sans 3", "ssans")
+font_add_google("Noto Emoji", "emoji")
+showtext_auto()
+
+print("Hello world")
+
+#### COLORS ####
+pal_nyt <- c("#3B5998", "#8B9DC3", "#00A1F1", "#005C99", "#FFCC00")
+
+elchi <- as.POSIXct("2025-07-05", tz = "Europe/Berlin")
+trump <- as.POSIXct("2024-11-05", tz = "Europe/Berlin")
+constance <- as.POSIXct("2026-03-15", tz = "Europe/Berlin")
+pepepacktsich <- as.POSIXct("2024-09-22", tz = "Europe/Berlin")
+chr24 <- as.POSIXct("2024-12-24", tz="Europe/Berlin")
+chr25 <- as.POSIXct("2025-12-24", tz="Europe/Berlin")
+valirus <- as.POSIXct("2025-08-24", tz = "Europe/Berlin")
+kurmerz <- as.POSIXct("2025-05-04", tz = "Europe/Berlin")
+evalua <- as.POSIXct("2024-07-15", tz = "Europe/Berlin")
+
+b <- ggplot(
+  weekly_full,
+  aes(x = period, y = n_messages, fill = sender_name)
+) +
+  geom_area(position = "stack", colour = "white", linewidth = 0.25) +
+  
+  annotate("text", x = chr24, y = 70, label = "🎄", family="emoji", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = chr25, y = 60, label = "🎄", family="emoji", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = pepepacktsich, y = 145, label = "Pepe packt sich", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = elchi, y = Inf, label = "Elchkeller-Affäre", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = trump, y = 170, label = "Wiederwahl Belzebub", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = constance, y = 120, label = "Consdance", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = valirus, y = 133, label = "How to Study in Russia", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = kurmerz, y = 120, label = "Kurella & Merz", vjust = 3, hjust = 0.5, size = 6) +
+  annotate("text", x = evalua, y = 110, label = "Evaluation", vjust = 3, hjust = 0.5, size = 6) +
+  
+  scale_fill_manual(values = pal_nyt) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.05)),
+    position = "right"
+  ) +
+  scale_x_datetime(
+    date_breaks = "1 month",
+    date_labels = "%b\n%Y",
+    expand = c(0, 0)
+  ) +
+  labs(
+    title    = "DoWi-Aktivität schwankt mehr als der DAX",
+    subtitle = "Nachrichten pro Woche, pro DoWi, Juli 2024 – Juni 2026",
+    caption  = "Signal Archiv",
+    fill     = NULL
+  ) +
+  theme_minimal(base_size = 16, base_family = "ssans") +
+  theme(
+    plot.title.position = "plot",
+    plot.title    = element_text(face = "bold", size = 32, margin = margin(b = 4)),
+    plot.subtitle = element_text(colour = "grey30", size=24, margin = margin(b = 16)),
+    plot.caption  = element_text(colour = "grey50", size=16, hjust = 0, margin = margin(t = 12)),
+    plot.caption.position = "plot",
+    legend.position = "top",
+    legend.justification = "left",
+    legend.key.size = unit(0.8, "lines"),
+    axis.title    = element_blank(),
+    axis.ticks    = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor   = element_blank(),
+    panel.grid.major.y = element_line(colour = "grey88", linetype = "dashed"),
+    plot.margin   = margin(24, 16, 16, 16)
+  )
+
+ggsave(
+  "dowis_area.png", plot = b,
+  device = ragg::agg_png,
+  width = 10, height = 6, units = "in", dpi = 300
+)
