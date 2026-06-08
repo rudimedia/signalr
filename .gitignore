@@ -1,1 +1,6 @@
-signal-export-2026-06-05-17-38-54/
+data/
+figs/
+renv
+renv.lock
+
+signalr/
