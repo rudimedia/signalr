@@ -50,4 +50,22 @@ messages_with_senders <- messages %>%
     body
   )
 
+#### EXTRACT CHATS (TO-DO) ####
+#' Extract individual chats from the data
+#' Currently requires figuring out your sender_name which is numeric
+#' ==> that's not hard to do, just View() or print() messages_with_senders, sender_name is what you are searching for.
+#' ==> In my case, the first entries are from "note to self" so all are sent by me. don't know if that's always the case.
+#' Also requires knowing the chat_id, cannot yet filter by chat / group name
+
+# 1. Replace your Sender ID with your Name
+name <- "Sam Känner"
+your_id <- "725"
+messages_with_senders$sender_name <- ifelse(messages_with_senders$sender_name == your_id, name, messages_with_senders$sender_name)
+
 save(messages_with_senders, file="data/messages_with_senders.RData")
+
+# 2. Filter out the chat you want to analyse
+chat_id <- "713"
+dowis <- messages_with_senders[messages_with_senders$chat_id == chat_id, ]
+
+save(dowis, file="data/dowis.RData")

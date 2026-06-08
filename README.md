@@ -17,4 +17,3 @@ Provides functions to analyse signal chats. Requires `create_tables.R` to have r
 
 ### `area_chart.R` 
 Plots an area chart for a group chat which displays message activity by member over time. Requires `create_tables.R` to have run beforehand.
-

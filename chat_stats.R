@@ -1,15 +1,4 @@
-load("data/messages_with_senders.RData")
-
-#### TO-DO ####
-
-# 1. Replace your Sender ID with your Name
-name <- "Sam Känner"
-your_id <- "725"
-messages_with_senders$sender_name <- ifelse(messages_with_senders$sender_name == your_id, name, messages_with_senders$sender_name)
-
-# 2. Filter out the chat you want to analyse
-chat_id <- "713"
-dowis <- messages_with_senders[messages_with_senders$chat_id == chat_id, ]
+load("data/dowis.RData")
 
 #### STAT FUNCTIONS ####
 
@@ -61,34 +50,12 @@ messages_over_time <- function(data, period = "month") {
     arrange(period, sender_name)
 }
 
-messages_over_time(pepe, "week") %>% 
-  ggplot(aes(x = period, y = n_messages, color = sender_name)) +
-  geom_line() +
-  geom_point() +
-  labs(
-    x = NULL,
-    y = "Messages",
-    color = "Sender"
-  )
-
 activity_by_hour <- function(data) {
   data %>%
     add_message_features()  %>% 
     count(sender_name, hour, name = "n_messages") %>%
     arrange(sender_name, hour)
 }
-activity_by_hour(pepe)
-
-activity_by_hour(pepe) %>%
-  ggplot(aes(x = hour, y = n_messages, color = sender_name)) +
-  geom_line() +
-  geom_point() +
-  scale_x_continuous(breaks = 0:23) +
-  labs(
-    x = "Hour of day",
-    y = "Messages",
-    color = "Sender"
-  )
 
 activity_by_weekday <- function(data) {
   data %>%
@@ -96,15 +63,6 @@ activity_by_weekday <- function(data) {
     count(sender_name, weekday, name = "n_messages") %>%
     arrange(sender_name, weekday)
 }
-
-activity_by_weekday(pepe) %>%
-  ggplot(aes(x = weekday, y = n_messages, fill = sender_name)) +
-  geom_col(position = "dodge") +
-  labs(
-    x = NULL,
-    y = "Messages",
-    fill = "Sender"
-  )
 
 message_gaps <- function(data) {
   data %>%
@@ -146,3 +104,5 @@ chat_summary <- function(data) {
 summary_dowis <- chat_summary(dowis)
 dowi_stats <- summary_dowis$sender_stats
 print(dowi_stats)
+
+save(summary_dowis, file="data/summary_dowis.RData")
