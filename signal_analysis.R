@@ -1,11 +1,10 @@
-setwd("/Users/breitner/local_research/signak")
+setwd("/Users/breitner/local_research/signalr")
 
-filepath <- "signal-export-2026-06-05-17-38-54/main.jsonl"
-pacman::p_load(jsonlite, tidyverse)
-
-
+filepath <- "data/signal-export-2026-06-08-07-24-41/main.jsonl"
+pacman::p_load(jsonlite, tidyverse, lubridate, stringr)
 chats <- jsonlite::stream_in(file(filepath))
 
+#### whats in it? ####
 dateReceived <- chats$chatItem$incoming$dateReceived
 dateReceived[!is.na(dateReceived)]
 
@@ -34,17 +33,19 @@ recipientId_pk <- chats$recipient$id
 # chatId_pk is the primary key to which chatId (probably points)
 chatId_pk <- chats$chat$id
 
+#### build tables ####
+
 recipients <- tibble(
   recipient_id = chats$recipient$id,
   given_name   = chats$recipient$contact$systemGivenName,
   family_name  = chats$recipient$contact$systemFamilyName
-) |>
-  filter(!is.na(recipient_id)) |>
+) %>%
+  filter(!is.na(recipient_id)) %>% 
   mutate(
     sender_name = str_squish(str_c(given_name, family_name, sep = " ")),
     sender_name = na_if(sender_name, ""),
     sender_name = coalesce(sender_name, recipient_id)
-  ) |>
+  ) %>% 
   distinct(recipient_id, .keep_all = TRUE)
 
 messages <- tibble(
@@ -53,8 +54,8 @@ messages <- tibble(
   date_received = chats$chatItem$incoming$dateReceived,
   date_sent     = chats$chatItem$dateSent,
   body          = chats$chatItem$standardMessage$text$body
-) |>
-  filter(!is.na(body)) |>
+) %>%
+  filter(!is.na(body)) %>%
   mutate(
     message_date = coalesce(date_received, date_sent),
     message_date = as.numeric(message_date),
@@ -65,11 +66,11 @@ messages <- tibble(
     )
   )
 
-messages_with_senders <- messages |>
+messages_with_senders <- messages %>%
   left_join(
     recipients,
     by = c("author_id" = "recipient_id")
-  ) |>
+  ) %>%
   select(
     datetime,
     chat_id,
@@ -80,18 +81,14 @@ messages_with_senders <- messages |>
 
 messages_with_senders$sender_name <- ifelse(messages_with_senders$sender_name == "725", "Sam Känner", messages_with_senders$sender_name)
 
-
-pepe <- messages_with_senders[messages_with_senders$chat_id == "368", ]
+# adjust the ID!
 dowis <- messages_with_senders[messages_with_senders$chat_id == "713", ]
-
-messages_with_senders[grep("Kirsten", messages_with_senders$sender_name), ]
-kirsten <- messages_with_senders[messages_with_senders$chat_id == "400", ]
 
 
 #### Analysis ####
-pacman::p_load(tidyverse, lubridate, stringr)
+
 add_message_features <- function(data) {
-  data |>
+  data %>%
     mutate(
       date = as.Date(datetime),
       year = year(datetime),
@@ -106,12 +103,11 @@ add_message_features <- function(data) {
       has_emoji = str_detect(body, "[\\p{So}\\p{Sk}]")
     )
 }
-pepe2 <- add_message_features(pepe)
 
 stats_by_sender <- function(data) {
-  data |>
-    add_message_features() |>
-    group_by(sender_name) |>
+  data %>%
+    add_message_features() %>%
+    group_by(sender_name) %>%
     summarise(
       n_messages = n(),
       first_message = min(datetime, na.rm = TRUE),
@@ -128,24 +124,18 @@ stats_by_sender <- function(data) {
       pct_urls = n_urls / n_messages,
       pct_emoji_messages = n_emoji_messages / n_messages,
       .groups = "drop"
-    ) |>
+    ) %>%
     arrange(desc(n_messages))
 }
 
-stats_by_sender(pepe)$pct_questions
-
 messages_over_time <- function(data, period = "month") {
-  data |>
-    mutate(period = floor_date(datetime, period)) |>
-    count(period, sender_name, name = "n_messages") |>
+  data %>%
+    mutate(period = floor_date(datetime, period)) %>% 
+    count(period, sender_name, name = "n_messages") %>% 
     arrange(period, sender_name)
 }
 
-messages_over_time(pepe, "day")
-messages_over_time(pepe, "week")
-messages_over_time(pepe, "month")
-
-messages_over_time(pepe, "week") |>
+messages_over_time(pepe, "week") %>% 
   ggplot(aes(x = period, y = n_messages, color = sender_name)) +
   geom_line() +
   geom_point() +
@@ -156,14 +146,14 @@ messages_over_time(pepe, "week") |>
   )
 
 activity_by_hour <- function(data) {
-  data |>
-    add_message_features() |>
-    count(sender_name, hour, name = "n_messages") |>
+  data %>%
+    add_message_features()  %>% 
+    count(sender_name, hour, name = "n_messages") %>%
     arrange(sender_name, hour)
 }
 activity_by_hour(pepe)
 
-activity_by_hour(pepe) |>
+activity_by_hour(pepe) %>%
   ggplot(aes(x = hour, y = n_messages, color = sender_name)) +
   geom_line() +
   geom_point() +
@@ -175,13 +165,13 @@ activity_by_hour(pepe) |>
   )
 
 activity_by_weekday <- function(data) {
-  data |>
-    add_message_features() |>
-    count(sender_name, weekday, name = "n_messages") |>
+  data %>%
+    add_message_features() %>%
+    count(sender_name, weekday, name = "n_messages") %>%
     arrange(sender_name, weekday)
 }
 
-activity_by_weekday(pepe) |>
+activity_by_weekday(pepe) %>%
   ggplot(aes(x = weekday, y = n_messages, fill = sender_name)) +
   geom_col(position = "dodge") +
   labs(
@@ -191,8 +181,8 @@ activity_by_weekday(pepe) |>
   )
 
 message_gaps <- function(data) {
-  data |>
-    arrange(datetime) |>
+  data %>%
+    arrange(datetime) %>%
     mutate(
       previous_sender = lag(sender_name),
       previous_datetime = lag(datetime),
@@ -200,11 +190,10 @@ message_gaps <- function(data) {
       sender_changed = sender_name != previous_sender
     )
 }
-message_gaps(pepe)
 
-message_gaps(pepe) |>
-  filter(!is.na(gap_minutes), gap_minutes < 60 * 24 * 2) |>
-  group_by(sender_name) |>
+message_gaps(pepe) %>%
+  filter(!is.na(gap_minutes), gap_minutes < 60 * 24 * 2) %>%
+  group_by(sender_name) %>%
   summarise(
     avg_gap_minutes = mean(gap_minutes, na.rm = TRUE),
     median_gap_minutes = median(gap_minutes, na.rm = TRUE),
@@ -212,20 +201,17 @@ message_gaps(pepe) |>
   )
 
 conversation_starters <- function(data, silence_hours = 12) {
-  data |>
-    arrange(datetime) |>
+  data %>%
+    arrange(datetime) %>%
     mutate(
       previous_datetime = lag(datetime),
       gap_hours = as.numeric(difftime(datetime, previous_datetime, units = "hours")),
       starts_new_conversation = is.na(gap_hours) | gap_hours >= silence_hours
-    ) |>
-    filter(starts_new_conversation) |>
-    count(sender_name, name = "n_conversation_starts") |>
+    ) %>%
+    filter(starts_new_conversation) %>%
+    count(sender_name, name = "n_conversation_starts") %>%
     arrange(desc(n_conversation_starts))
 }
-
-conversation_starters(pepe, silence_hours = 12)
-conversation_starters(pepe, silence_hours = 24)
 
 chat_summary <- function(data) {
   list(
@@ -239,45 +225,12 @@ chat_summary <- function(data) {
   )
 }
 
-summary_pepe <- chat_summary(pepe)
-
-summary_pepe$sender_stats
-summary_pepe$conversation_starters_12h
-
-#### Kirsten ####
-
-summary_kirsten <- chat_summary(kirsten)
-summary_kirsten$conversation_starters_12h
-summary_kirsten$conversation_starters_24h
-summary_kirsten$message_gaps
-
 #### DoWis ####
 
 summary_dowis <- chat_summary(dowis)
 dowi_stats <- summary_dowis$sender_stats
-summary_dowis$weekly_messages
 
-pacman::p_load(tinyplot)
-plt(summary_dowis$weekly_messages$n_messages, lty=summary_dowis$weekly_messages$sender_name, type="l", col="black")
-
-
-weekly <- summary_dowis$weekly_messages
-
-pdf("timeseries_dowis.pdf", width=20, height=10)
-tinytheme("tufte")
-plt(
-  n_messages ~ period | sender_name,
-  data = weekly,
-  type = "l",
-  #col = "black",
-  lty = "by",
-  xlab="Week",
-  ylab="# messages",
-  main="Messages per week in DoWis",
-  grid=TRUE,
-)
-dev.off()
-pacman::p_load(tidyverse, patchwork)
+pacman::p_load(patchwork)
 
 plot_sender_bar <- function(data, y, ylab, title) {
   ggplot(data, aes(x = sender_name, y = .data[[y]], fill = sender_name)) +

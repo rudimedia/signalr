@@ -4,3 +4,6 @@ renv
 renv.lock
 .Rprofile
 .DS_Store
+.Rproj.user
+.positai
+signalr.Rproj
