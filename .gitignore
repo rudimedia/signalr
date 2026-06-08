@@ -2,6 +2,5 @@ data/
 figs/
 renv
 renv.lock
-
-signalr/
 .Rprofile
+.DS_Store
