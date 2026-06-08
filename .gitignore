@@ -7,3 +7,5 @@ renv.lock
 .Rproj.user
 .positai
 signalr.Rproj
+.RData
+.Rhistory
